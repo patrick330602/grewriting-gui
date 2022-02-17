@@ -1,3 +1,4 @@
+from cProfile import label
 from grewriting_gui.helper import is_connected
 from datetime import datetime
 from os import path, makedirs, remove
@@ -10,7 +11,7 @@ import json
 
 gi.require_version("Gtk", "3.0")
 
-from gi.repository import Gtk, GObject
+from gi.repository import Gtk, GLib
 
 class MainWindow(Gtk.Window):
     def __init__(self):
@@ -76,11 +77,35 @@ class MainWindow(Gtk.Window):
         
         box_outer.pack_start(cfg_sect, False, False, 2)
 
-        self.main_field = Gtk.Label()
-        self.main_field.set_justify(Gtk.Justification.CENTER)
-        self.main_field.set_markup("\n\n\n\n<i>Press Start to take a test</i>\n\n\n\n")
-        self.main_field.set_line_wrap(True)
-        box_outer.pack_start(self.main_field, False, False, 2)
+        
+        self.main_field = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        self.type_title = Gtk.Label()
+        self.main_field.pack_start(self.type_title, False, False, 0)
+        
+        self.g_in = Gtk.Label()
+        self.g_in.set_justify(Gtk.Justification.LEFT)
+        self.g_in.set_line_wrap(True)
+        self.main_field.pack_start(self.g_in, False, False, 0)
+        
+
+        main_sect = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        
+        q_sect = Gtk.Frame()
+        
+        self.q_sect = Gtk.Label()
+        self.q_sect.set_markup("\n\n\n\n<i>Press Start to take a test</i>\n\n\n\n")
+        self.q_sect.set_margin_start(60)
+        self.q_sect.set_margin_end(60)
+        main_sect.pack_start(self.q_sect, False, False, 5)
+        
+        self.i_sect = Gtk.Label()
+        self.i_sect.set_line_wrap(True)
+        self.i_sect.set_justify(Gtk.Justification.LEFT)
+        main_sect.pack_start(self.i_sect, False, False, 0)
+        main_sect.set_margin_start(40)
+        main_sect.set_margin_end(40)
+        self.main_field.pack_start(main_sect, False, False, 5)
+        box_outer.pack_start(self.main_field, False, False, 5)
 
         self.writing_field = Gtk.TextView()
         box_outer.pack_start(self.writing_field, True, True, 0)
@@ -141,9 +166,6 @@ class MainWindow(Gtk.Window):
         pass
 
     def start(self, widget):
-        self.start_btn.set_sensitive(False)
-        self.start_timer()
-        
         content = ""
         if self.default_lib == "both":
             secure_random = random.SystemRandom()
@@ -152,18 +174,37 @@ class MainWindow(Gtk.Window):
             writing_list = self.argument_lib if self.default_lib == "argument" else self.issue_lib
         secure_random = random.SystemRandom()
         writingitem = secure_random.choice(writing_list)
-        content = writingitem['type'].title() + ' Writing Pool\n\nQuestion:\n' + \
-                  writingitem['first'] + '\n'
+        
+        self.type_title.set_markup("<b>ANALYSE AN {}</b>\n".format(writingitem["type"].upper()))
+        if writingitem["type"] == "issue":
+            q_in_t = ("You have 30 minutes to plan and compose a response to the issue below. "
+                      "A response to any other issue will receive a score of zero. Make sure "
+                      "that you respond according to the specific instructions and support your "
+                      "position on the issue with reasons and examples drawn from such areas as "
+                      "your reading, experience, observations, and/or academic studies.")
+        elif writingitem["type"] == "argument":
+            q_in_t = ("You have 30 minutes to plan and compose a response in which you evaluate "
+                      "the argument passage that appears below. A response to any other argument "
+                      "will receive a score of zero. Make sure that you respond according to the "
+                      "specific instructions and support your evaluation with relevant reasons "
+                      "and/or examples.\n\n<b>Note that you are NOT being asked to present your "
+                      "own views on the subject.</b>")
+        self.g_in.set_markup(q_in_t)
+        content = writingitem['first'] + '\n'
         if 'second' in writingitem.keys():
             content = content + '\n' + writingitem['second'] + '\n'
-        content = content + '\nInstruction:\n' + writingitem['instru'] + "\n"
-        self.main_field.set_justify(Gtk.Justification.LEFT)
-        self.main_field.set_text(content)
-    
+        self.q_sect.set_text(content)
+        self.q_sect.set_line_wrap(True)
+        self.q_sect.set_justify(Gtk.Justification.LEFT)
+        self.i_sect.set_text(writingitem['instru'] + "\n")
+        
+        self.start_btn.set_sensitive(False)
+        self.start_timer()
+
     def start_timer(self):
         counter = 1800
         while counter >= 0:
-            GObject.timeout_add(counter * 1000, self.countdown, 1800 - counter)
+            GLib.timeout_add(counter * 1000, self.countdown, 1800 - counter)
             counter -= 1
 
     def countdown(self, counter):
