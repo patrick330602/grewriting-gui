@@ -34,16 +34,31 @@ class MainWindow(Gtk.Window):
         # core window
 
         box_outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        box_outer.set_homogeneous(False)
         self.add(box_outer)
 
+        update_sect = Gtk.Box()
+
+        self.update_info = Gtk.Label(label="Last Updated: -")
+        self.update_info.set_justify(Gtk.Justification.LEFT)
+        update_sect.pack_start(self.update_info, True, True, 0)
+
+        self.upd_btn = Gtk.Button.new_with_label("Update Definitions")
+        update_sect.pack_start(self.upd_btn, False, True, 0)
+
+        box_outer.pack_start(update_sect, False, False, 0)
+
         self.main_field = Gtk.Label()
+        self.main_field.set_lines(30)
         self.main_field.set_justify(Gtk.Justification.LEFT)
         self.main_field.set_line_wrap(True)
-        box_outer.pack_start(self.main_field, True, True, 0)
+        box_outer.pack_start(self.main_field, False, False, 2)
 
         self.writing_field = Gtk.TextView()
         box_outer.pack_start(self.writing_field, True, True, 0)
+        # initial the folder
+        def_loc = path.join(Path.home(), ".local/share/grewriting-gui")
+        makedirs(def_loc, exist_ok=True)
+        def_file = path.join(def_loc, "def.json")
 
     def help_dig(self, widget):
         pass
