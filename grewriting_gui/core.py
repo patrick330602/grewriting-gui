@@ -10,7 +10,7 @@ import json
 
 gi.require_version("Gtk", "3.0")
 
-from gi.repository import Gtk, Gio
+from gi.repository import Gtk, GObject
 
 class MainWindow(Gtk.Window):
     def __init__(self):
@@ -18,6 +18,7 @@ class MainWindow(Gtk.Window):
         self.set_border_width(10)
         self.set_default_size(800, 600)
 
+        self.default_lib = "all"
         self.argument_lib = {}
         self.issue_lib = {}
 
@@ -57,10 +58,27 @@ class MainWindow(Gtk.Window):
         update_sect.pack_start(self.upd_btn, False, True, 0)
 
         box_outer.pack_start(update_sect, False, False, 0)
+        
+        cfg_sect = Gtk.Box()
+        self.type_info = Gtk.Box(spacing=6)
+        old_btn = None
+        for type in ('Both', 'Argument', 'Issue'):
+            type_btn = Gtk.RadioButton.new_with_label_from_widget(old_btn, type)
+            type_btn.connect("toggled", self.on_type_toggled, type)
+            self.type_info.pack_start(type_btn, False, False, 0)
+            if old_btn is None:
+                old_btn = type_btn
+
+        cfg_sect.pack_start(self.type_info, True, True, 0)
+
+        self.timer_lb = Gtk.Label(label="Timer: 30:00")
+        cfg_sect.pack_start(self.timer_lb, False, True, 0)
+        
+        box_outer.pack_start(cfg_sect, False, False, 2)
 
         self.main_field = Gtk.Label()
         self.main_field.set_justify(Gtk.Justification.CENTER)
-        self.main_field.set_markup("\n\n\n\n<i>Press Refresh to get a article</i>\n\n\n\n")
+        self.main_field.set_markup("\n\n\n\n<i>Press Start to take a test</i>\n\n\n\n")
         self.main_field.set_line_wrap(True)
         box_outer.pack_start(self.main_field, False, False, 2)
 
@@ -116,14 +134,22 @@ class MainWindow(Gtk.Window):
                 print("INFO dialog closed")
                 dialog.destroy()
 
+    def on_type_toggled(self, widget, type):
+        self.default_lib = type.lower()
+    
     def help_dig(self, widget):
         pass
 
     def start(self, widget):
+        self.start_btn.set_sensitive(False)
+        self.start_timer()
         
         content = ""
-        secure_random = random.SystemRandom()
-        writing_list = secure_random.choice([self.argument_lib, self.issue_lib])
+        if self.default_lib == "both":
+            secure_random = random.SystemRandom()
+            writing_list = secure_random.choice([self.argument_lib, self.issue_lib])
+        else:
+            writing_list = self.argument_lib if self.default_lib == "argument" else self.issue_lib
         secure_random = random.SystemRandom()
         writingitem = secure_random.choice(writing_list)
         content = writingitem['type'].title() + ' Writing Pool\n\nQuestion:\n' + \
@@ -133,6 +159,15 @@ class MainWindow(Gtk.Window):
         content = content + '\nInstruction:\n' + writingitem['instru'] + "\n"
         self.main_field.set_justify(Gtk.Justification.LEFT)
         self.main_field.set_text(content)
+    
+    def start_timer(self):
+        counter = 1800
+        while counter >= 0:
+            GObject.timeout_add(counter * 1000, self.countdown, 1800 - counter)
+            counter -= 1
+
+    def countdown(self, counter):
+        self.timer_lb.set_text("Timer: {:02d}:{:02d}".format(counter // 60, counter % 60))
 
 
 win = MainWindow()
