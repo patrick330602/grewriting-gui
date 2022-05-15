@@ -1,4 +1,3 @@
-from cProfile import label
 from grewriting_gui.helper import is_connected
 from datetime import datetime
 from os import path, makedirs, remove
@@ -156,14 +155,23 @@ class MainWindow(Gtk.Window):
                     "No Internet Connection. Failed to get definitions."
                 )
                 dialog.run()
-                print("INFO dialog closed")
                 dialog.destroy()
 
     def on_type_toggled(self, widget, type):
         self.default_lib = type.lower()
     
     def help_dig(self, widget):
-        pass
+        helpdig = Gtk.AboutDialog()
+        helpdig.set_program_name("GRE Writing Pool GUI")
+        helpdig.set_version("0.1")
+        helpdig.set_copyright("Copyleft 2022 Patirck Wu\nAll the sample "
+                              "writing are retrived via ETS website. GRE "
+                              "is a registered trademark by ETS. All "
+                              "rights reserved by ETS.")
+        helpdig.set_comments("A GUI for GRE Writing Pool")
+        helpdig.set_authors(["Patirck Wu"])
+        helpdig.set_license_type(Gtk.License.GPL_3_0)
+        helpdig.run()
 
     def start(self, widget):
         content = ""
